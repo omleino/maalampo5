@@ -61,19 +61,18 @@ def diskonttaa(kustannukset, diskontto):
 def npv(kustannukset, diskontto):
     return float(np.sum(diskonttaa(kustannukset, diskontto)))
 
-def takaisinmaksuaika(kaukolampo, maalampo):
-    kumulatiivinen_kl = np.cumsum(kaukolampo)
-    kumulatiivinen_ml = np.cumsum(maalampo)
-    erot = kumulatiivinen_kl - kumulatiivinen_ml
-    for vuosi, ero in enumerate(erot, 1):
-        if ero >= 0:
+def takaisinmaksuaika_investointi(investointi, kaukolampo, maalampo):
+    vuosittainen_saasto = np.array(kaukolampo) - np.array(maalampo)
+    kum = np.cumsum(vuosittainen_saasto)
+    for vuosi, summa in enumerate(kum, 1):
+        if summa >= investointi:
             return vuosi
-    return None  # Ei maksanut takaisin 50 vuodessa
+    return None
 
 # ---------- KÄYTTÖLIITTYMÄ ----------
 
 st.set_page_config(page_title="Lämmitysvaihtoehdot", layout="wide")
-st.title("Maalämpö (3 eri sähkön hintaa) vs Kaukolämpö")
+st.title("Maalämpö (3 sähkön hintaa) vs Kaukolämpö – 50 vuoden vertailu")
 
 with st.sidebar:
     st.header("Yhteiset oletukset")
@@ -124,7 +123,7 @@ ax.legend()
 ax.grid(True)
 st.pyplot(fig, use_container_width=True)
 
-# ---------- NPV-TULOKSET ----------
+# ---------- NPV ----------
 
 st.markdown("### Nettonykyarvot (NPV)")
 col1, col2, col3, col4 = st.columns(4)
@@ -163,17 +162,16 @@ st.write(f"**Maalämpö A ({hinta1:.2f} €/kWh):** {m1_v:.2f} €/v | {m1_kk:.2
 st.write(f"**Maalämpö B ({hinta2:.2f} €/kWh):** {m2_v:.2f} €/v | {m2_kk:.2f} €/kk")
 st.write(f"**Maalämpö C ({hinta3:.2f} €/kWh):** {m3_v:.2f} €/v | {m3_kk:.2f} €/kk")
 
-# ---------- TAKAISINMAKSU ----------
+# ---------- TAKAISINMAKSUAIKA ----------
 
-st.markdown("### Takaisinmaksuaika")
+st.markdown("### Takaisinmaksuaika (investoinnin takaisinmaksu)")
 
-vuosi_a = takaisinmaksuaika(kl, ml1)
-vuosi_b = takaisinmaksuaika(kl, ml2)
-vuosi_c = takaisinmaksuaika(kl, ml3)
+pb1 = takaisinmaksuaika_investointi(investointi, kl, ml1)
+pb2 = takaisinmaksuaika_investointi(investointi, kl, ml2)
+pb3 = takaisinmaksuaika_investointi(investointi, kl, ml3)
 
-def muotoile(v):
-    return f"{v} vuotta" if v else "ei maksanut takaisin 50 vuodessa"
+def f(v): return f"{v} vuotta" if v else "ei 50 vuodessa"
 
-st.write(f"**Maalämpö A ({hinta1:.2f} €/kWh):** {muotoile(vuosi_a)}")
-st.write(f"**Maalämpö B ({hinta2:.2f} €/kWh):** {muotoile(vuosi_b)}")
-st.write(f"**Maalämpö C ({hinta3:.2f} €/kWh):** {muotoile(vuosi_c)}")
+st.write(f"**Maalämpö A ({hinta1:.2f} €/kWh):** {f(pb1)}")
+st.write(f"**Maalämpö B ({hinta2:.2f} €/kWh):** {f(pb2)}")
+st.write(f"**Maalämpö C ({hinta3:.2f} €/kWh):** {f(pb3)}")
