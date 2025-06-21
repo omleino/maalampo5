@@ -69,7 +69,6 @@ def takaisinmaksuaika_investointi(investointi, kaukolampo, maalampo):
             return vuosi
     return None
 
-# --- apu erittelytaulukolle ---
 def erittely_listat(investointi, laina_aika, korko, sahkon_hinta, kulutus, inflaatio):
     rahoitus, lampo = [], []
     jaljella = investointi
@@ -88,92 +87,81 @@ def erittely_listat(investointi, laina_aika, korko, sahkon_hinta, kulutus, infla
         h *= (1 + inflaatio / 100)
     return rahoitus, lampo
 
-# ---------- KÄYTTÖLIITTYMÄ ----------
+# ---------- SOVELLUS ----------
 
 st.set_page_config(page_title="Lämmitysvaihtoehdot", layout="wide")
-st.title("Maalämpö (3 sähkön hintaa) vs Kaukolämpö – 50 v")
+st.title("Maalämpö (3 sähkön hintaa) vs Kaukolämpö – 50 vuotta")
 
+# Sivupalkki
 with st.sidebar:
     st.header("Yhteiset oletukset")
-    investointi = st.number_input("Investointi (€)", min_value=0.0, value=650_000.0, step=10_000.0)
-    laina_aika = st.slider("Investointilaina (v)", 5, 40, 20)
+    investointi = st.number_input("Investointi (€)", min_value=0.0, value=650000.0, step=10000.0)
+    laina_aika = st.slider("Laina-aika (v)", 5, 40, 20)
     korko = st.number_input("Korko (%/v)", min_value=0.0, value=3.0, step=0.1)
-    kulutus = st.number_input("Sähkönkulutus (kWh/v)", min_value=0.0, value=180_000.0, step=10_000.0)
+    kulutus = st.number_input("Sähkönkulutus (kWh/v)", min_value=0.0, value=180000.0, step=10000.0)
     inflaatio = st.number_input("Sähkön inflaatio (%/v)", min_value=0.0, value=2.0, step=0.1)
     korjaus_vali = st.slider("Korjausväli (v)", 5, 30, 15)
-    korjaus_hinta = st.number_input("Korjauksen hinta (€)", min_value=0.0, value=20_000.0, step=5_000.0)
+    korjaus_hinta = st.number_input("Korjauksen hinta (€)", min_value=0.0, value=20000.0, step=5000.0)
     korjaus_laina_aika = st.slider("Korjauslaina (v)", 1, 30, 10)
 
-    st.header("Maalämmön sähkön hinnat (€/kWh)")
-    h1 = st.number_input("Vaihtoehto A", min_value=0.0, value=0.08, step=0.01)
-    h2 = st.number_input("Vaihtoehto B", min_value=0.0, value=0.12, step=0.01)
-    h3 = st.number_input("Vaihtoehto C", min_value=0.0, value=0.16, step=0.01)
+    st.header("Sähkön hinnat")
+    h1 = st.number_input("Vaihtoehto A (€/kWh)", min_value=0.0, value=0.08, step=0.01)
+    h2 = st.number_input("Vaihtoehto B (€/kWh)", min_value=0.0, value=0.12, step=0.01)
+    h3 = st.number_input("Vaihtoehto C (€/kWh)", min_value=0.0, value=0.16, step=0.01)
 
     st.header("Kaukolämpö")
-    kl0 = st.number_input("Kaukolämpö/vuosi (€)", min_value=0.0, value=85_000.0, step=5_000.0)
+    kl0 = st.number_input("Kaukolämpö/vuosi (€)", min_value=0.0, value=85000.0, step=5000.0)
     kl_inf = st.number_input("Kaukolämmön inflaatio (%/v)", min_value=0.0, value=2.0, step=0.1)
 
-    st.header("Muuta")
-    disk = st.number_input("Diskonttokorko NPV (%/v)", min_value=0.0, value=4.0, step=0.1)
-    neliot = st.number_input("Maksavat neliöt (m²)", min_value=1.0, value=1_000.0, step=100.0)
+    st.header("Yleiset asetukset")
+    disk = st.number_input("Diskonttokorko (%/v)", min_value=0.0, value=4.0, step=0.1)
+    neliot = st.number_input("Maksavat neliöt (m²)", min_value=1.0, value=1000.0, step=100.0)
 
-# ---------- LASKELMAT ----------
-
+# Laskelmat
 vuodet = list(range(1, 51))
 kl = laske_kaukolampo_kustannukset(kl0, kl_inf)
-ml1 = laske_kustannukset_50v(investointi, laina_aika, korko, h1, kulutus,
-                              korjaus_vali, korjaus_hinta, korjaus_laina_aika, inflaatio)
-ml2 = laske_kustannukset_50v(investointi, laina_aika, korko, h2, kulutus,
-                              korjaus_vali, korjaus_hinta, korjaus_laina_aika, inflaatio)
-ml3 = laske_kustannukset_50v(investointi, laina_aika, korko, h3, kulutus,
-                              korjaus_vali, korjaus_hinta, korjaus_laina_aika, inflaatio)
+ml1 = laske_kustannukset_50v(investointi, laina_aika, korko, h1, kulutus, korjaus_vali, korjaus_hinta, korjaus_laina_aika, inflaatio)
+ml2 = laske_kustannukset_50v(investointi, laina_aika, korko, h2, kulutus, korjaus_vali, korjaus_hinta, korjaus_laina_aika, inflaatio)
+ml3 = laske_kustannukset_50v(investointi, laina_aika, korko, h3, kulutus, korjaus_vali, korjaus_hinta, korjaus_laina_aika, inflaatio)
 
-# ---------- KAAVIO (entinen) ----------
-
+# Kaavio
 fig, ax = plt.subplots()
 ax.plot(vuodet, kl, "--", label="Kaukolämpö")
 ax.plot(vuodet, ml1, label=f"Maalämpö A ({h1:.2f} €/kWh)")
 ax.plot(vuodet, ml2, label=f"Maalämpö B ({h2:.2f} €/kWh)")
 ax.plot(vuodet, ml3, label=f"Maalämpö C ({h3:.2f} €/kWh)")
 ax.set_xlabel("Vuosi"); ax.set_ylabel("Kustannus (€)")
-ax.set_title("Lämmityskustannukset 50 v"); ax.grid(True); ax.legend()
+ax.set_title("Lämmityskustannukset 50 vuoden ajalta"); ax.grid(True); ax.legend()
 st.pyplot(fig, use_container_width=True)
 
-# ---------- NPV + Vanhat taulukot + takaisinmaksu (säilytetty) ----------
-# (--- Koodi samana kuin edellisessä versiossa, ei toisteta tilan säästämiseksi ---)
-
-# ---------- UUSI ERITTELYTAULUKKO €/m²/kk (5 v välein) ----------
-
-raho1, lampo1 = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio)
-raho2, lampo2 = erittely_listat(investointi, laina_aika, korko, h2, kulutus, inflaatio)
-raho3, lampo3 = erittely_listat(investointi, laina_aika, korko, h3, kulutus, inflaatio)
+# Taulukko (5v välein)
+rahoitus, _ = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio)
+_, lampo1 = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio)
+_, lampo2 = erittely_listat(investointi, laina_aika, korko, h2, kulutus, inflaatio)
+_, lampo3 = erittely_listat(investointi, laina_aika, korko, h3, kulutus, inflaatio)
+kl_vastike = laske_kaukolampo_kustannukset(kl0, kl_inf)
 
 yrs5 = list(range(5, 51, 5))
 tbl = pd.DataFrame({
     "Vuosi": yrs5,
-    f"Rah A €/m²/kk": [raho1[y-1] / neliot / 12 for y in yrs5],
-    f"Lämm A €/m²/kk": [lampo1[y-1] / neliot / 12 for y in yrs5],
-    f"Rah B €/m²/kk": [raho2[y-1] / neliot / 12 for y in yrs5],
-    f"Lämm B €/m²/kk": [lampo2[y-1] / neliot / 12 for y in yrs5],
-    f"Rah C €/m²/kk": [raho3[y-1] / neliot / 12 for y in yrs5],
-    f"Lämm C €/m²/kk": [lampo3[y-1] / neliot / 12 for y in yrs5],
+    "Rahoitusvastike €/m²/kk": [rahoitus[y-1] / neliot / 12 for y in yrs5],
+    f"Lämmitysvastike A €/m²/kk": [lampo1[y-1] / neliot / 12 for y in yrs5],
+    f"Lämmitysvastike B €/m²/kk": [lampo2[y-1] / neliot / 12 for y in yrs5],
+    f"Lämmitysvastike C €/m²/kk": [lampo3[y-1] / neliot / 12 for y in yrs5],
+    "Kaukolämpö €/m²/kk": [kl_vastike[y-1] / neliot / 12 for y in yrs5],
 }).set_index("Vuosi")
-
 st.markdown("### Rahoitus- ja lämmitysvastikkeet €/m²/kk (5 v välein)")
 st.dataframe(tbl.style.format("{:.2f}"), use_container_width=True)
 
-# ---------- Tekstinä lainaosuus neliötä kohden ----------
-
-st.markdown(f"**Lainaosuus investoinnille:** {investointi / neliot:,.0f} €/m²")
-# ---------- TAKAISINMAKSUAIKA ----------
-
+# Takaisinmaksuaika
 pb1 = takaisinmaksuaika_investointi(investointi, kl, ml1)
 pb2 = takaisinmaksuaika_investointi(investointi, kl, ml2)
 pb3 = takaisinmaksuaika_investointi(investointi, kl, ml3)
-
 st.markdown("### Takaisinmaksuaika (investoinnin takaisinmaksu)")
-
 def f(v): return f"{v} vuotta" if v else "ei 50 vuodessa"
 st.write(f"**Maalämpö A ({h1:.2f} €/kWh):** {f(pb1)}")
 st.write(f"**Maalämpö B ({h2:.2f} €/kWh):** {f(pb2)}")
 st.write(f"**Maalämpö C ({h3:.2f} €/kWh):** {f(pb3)}")
+
+# Lainaosuus
+st.markdown(f"**Lainaosuus investoinnille:** {investointi / neliot:,.0f} €/m²")
