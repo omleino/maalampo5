@@ -165,3 +165,15 @@ st.dataframe(tbl.style.format("{:.2f}"), use_container_width=True)
 # ---------- Tekstinä lainaosuus neliötä kohden ----------
 
 st.markdown(f"**Lainaosuus investoinnille:** {investointi / neliot:,.0f} €/m²")
+# ---------- TAKAISINMAKSUAIKA ----------
+
+pb1 = takaisinmaksuaika_investointi(investointi, kl, ml1)
+pb2 = takaisinmaksuaika_investointi(investointi, kl, ml2)
+pb3 = takaisinmaksuaika_investointi(investointi, kl, ml3)
+
+st.markdown("### Takaisinmaksuaika (investoinnin takaisinmaksu)")
+
+def f(v): return f"{v} vuotta" if v else "ei 50 vuodessa"
+st.write(f"**Maalämpö A ({h1:.2f} €/kWh):** {f(pb1)}")
+st.write(f"**Maalämpö B ({h2:.2f} €/kWh):** {f(pb2)}")
+st.write(f"**Maalämpö C ({h3:.2f} €/kWh):** {f(pb3)}")
