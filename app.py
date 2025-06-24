@@ -5,10 +5,8 @@ import numpy as np
 
 # ---------- LASKENTAFUNKTIOT ----------
 
-def laske_kustannukset_50v(investointi, laina_aika, korko,
-                            sahkon_hinta, sahkon_kulutus,
-                            korjaus_vali, korjaus_hinta, korjaus_laina_aika,
-                            sahkon_inflaatio):
+def laske_kustannukset_50v(investointi, laina_aika, korko, sahkon_hinta, sahkon_kulutus,
+                            korjaus_vali, korjaus_hinta, korjaus_laina_aika, sahkon_inflaatio):
     vuodet = 50
     lyhennys = investointi / laina_aika
     jaljella = investointi
@@ -55,12 +53,6 @@ def laske_kaukolampo_kustannukset(kustannus, inflaatio):
         h *= (1 + inflaatio / 100)
     return tulos
 
-def diskonttaa(kustannukset, diskontto):
-    return [k / ((1 + diskontto / 100) ** i) for i, k in enumerate(kustannukset, 1)]
-
-def npv(kustannukset, diskontto):
-    return float(np.sum(diskonttaa(kustannukset, diskontto)))
-
 def takaisinmaksuaika_investointi(investointi, kaukolampo, maalampo):
     vuosittainen_saasto = np.array(kaukolampo) - np.array(maalampo)
     kum = np.cumsum(vuosittainen_saasto)
@@ -69,11 +61,14 @@ def takaisinmaksuaika_investointi(investointi, kaukolampo, maalampo):
             return vuosi
     return None
 
-def erittely_listat(investointi, laina_aika, korko, sahkon_hinta, kulutus, inflaatio):
+def erittely_listat(investointi, laina_aika, korko, sahkon_hinta, kulutus, inflaatio,
+                    korjaus_vali, korjaus_hinta, korjaus_laina_aika):
     rahoitus, lampo = [], []
     jaljella = investointi
     lyhennys = investointi / laina_aika
     h = sahkon_hinta
+    korjauslainat = []
+
     for v in range(1, 51):
         if v <= laina_aika:
             korko_v = jaljella * (korko / 100)
@@ -81,10 +76,29 @@ def erittely_listat(investointi, laina_aika, korko, sahkon_hinta, kulutus, infla
             jaljella -= lyhennys
         else:
             rah = 0
+
+        if v > 1 and (v - 1) % korjaus_vali == 0:
+            korjauslainat.append({
+                "jaljella": korjaus_hinta,
+                "lyh": korjaus_hinta / korjaus_laina_aika,
+                "vuosia": korjaus_laina_aika
+            })
+
+        korjaus_lyh = korjaus_korot = 0
+        for l in korjauslainat:
+            if l["vuosia"] > 0:
+                korko_l = l["jaljella"] * (korko / 100)
+                korjaus_korot += korko_l
+                korjaus_lyh += l["lyh"]
+                l["jaljella"] -= l["lyh"]
+                l["vuosia"] -= 1
+        korjauslainat = [l for l in korjauslainat if l["vuosia"] > 0]
+
         elec = h * kulutus
+        lampo.append(elec + korjaus_lyh + korjaus_korot)
         rahoitus.append(rah)
-        lampo.append(elec)
         h *= (1 + inflaatio / 100)
+
     return rahoitus, lampo
 
 # ---------- SOVELLUS ----------
@@ -92,7 +106,6 @@ def erittely_listat(investointi, laina_aika, korko, sahkon_hinta, kulutus, infla
 st.set_page_config(page_title="Lämmitysvaihtoehdot", layout="wide")
 st.title("Maalämpö (3 sähkön hintaa) vs Kaukolämpö – 50 vuotta")
 
-# Sivupalkki
 with st.sidebar:
     st.header("Yhteiset oletukset")
     investointi = st.number_input("Investointi (€)", min_value=0.0, value=650000.0, step=10000.0)
@@ -113,8 +126,7 @@ with st.sidebar:
     kl0 = st.number_input("Kaukolämpö/vuosi (€)", min_value=0.0, value=85000.0, step=5000.0)
     kl_inf = st.number_input("Kaukolämmön inflaatio (%/v)", min_value=0.0, value=2.0, step=0.1)
 
-    st.header("Yleiset asetukset")
-    disk = st.number_input("Diskonttokorko (%/v)", min_value=0.0, value=4.0, step=0.1)
+    st.header("Maksuperuste")
     neliot = st.number_input("Maksavat neliöt (m²)", min_value=1.0, value=1000.0, step=100.0)
 
 # Laskelmat
@@ -131,24 +143,25 @@ ax.plot(vuodet, ml1, label=f"Maalämpö A ({h1:.2f} €/kWh)")
 ax.plot(vuodet, ml2, label=f"Maalämpö B ({h2:.2f} €/kWh)")
 ax.plot(vuodet, ml3, label=f"Maalämpö C ({h3:.2f} €/kWh)")
 ax.set_xlabel("Vuosi"); ax.set_ylabel("Kustannus (€)")
-ax.set_title("Lämmityskustannukset 50 vuoden ajalta"); ax.grid(True); ax.legend()
+ax.set_title("Lämmityskustannukset 50 vuoden ajalta")
+ax.grid(True); ax.legend()
 st.pyplot(fig, use_container_width=True)
 
-# Taulukko (5v välein)
-rahoitus, _ = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio)
-_, lampo1 = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio)
-_, lampo2 = erittely_listat(investointi, laina_aika, korko, h2, kulutus, inflaatio)
-_, lampo3 = erittely_listat(investointi, laina_aika, korko, h3, kulutus, inflaatio)
+# Vastiketaulukko (5 v välein)
+rahoitus, _ = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio, korjaus_vali, korjaus_hinta, korjaus_laina_aika)
+_, lampo1 = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio, korjaus_vali, korjaus_hinta, korjaus_laina_aika)
+_, lampo2 = erittely_listat(investointi, laina_aika, korko, h2, kulutus, inflaatio, korjaus_vali, korjaus_hinta, korjaus_laina_aika)
+_, lampo3 = erittely_listat(investointi, laina_aika, korko, h3, kulutus, inflaatio, korjaus_vali, korjaus_hinta, korjaus_laina_aika)
 kl_vastike = laske_kaukolampo_kustannukset(kl0, kl_inf)
 
 yrs5 = list(range(5, 51, 5))
 tbl = pd.DataFrame({
     "Vuosi": yrs5,
-    "Rahoitusvastike €/m²/kk": [rahoitus[y-1] / neliot / 12 for y in yrs5],
-    f"Lämmitysvastike A €/m²/kk": [lampo1[y-1] / neliot / 12 for y in yrs5],
-    f"Lämmitysvastike B €/m²/kk": [lampo2[y-1] / neliot / 12 for y in yrs5],
-    f"Lämmitysvastike C €/m²/kk": [lampo3[y-1] / neliot / 12 for y in yrs5],
-    "Kaukolämpö €/m²/kk": [kl_vastike[y-1] / neliot / 12 for y in yrs5],
+    "Rahoitusvastike €/m²/kk": [rahoitus[y-1]/neliot/12 for y in yrs5],
+    "Lämmitysvastike A €/m²/kk": [lampo1[y-1]/neliot/12 for y in yrs5],
+    "Lämmitysvastike B €/m²/kk": [lampo2[y-1]/neliot/12 for y in yrs5],
+    "Lämmitysvastike C €/m²/kk": [lampo3[y-1]/neliot/12 for y in yrs5],
+    "Kaukolämpö €/m²/kk": [kl_vastike[y-1]/neliot/12 for y in yrs5]
 }).set_index("Vuosi")
 st.markdown("### Rahoitus- ja lämmitysvastikkeet €/m²/kk (5 v välein)")
 st.dataframe(tbl.style.format("{:.2f}"), use_container_width=True)
