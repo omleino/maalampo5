@@ -173,7 +173,7 @@ st.dataframe(tbl.style.format("{:.2f}"), use_container_width=True)
 pb1 = takaisinmaksuaika_investointi(investointi, kl, ml1)
 pb2 = takaisinmaksuaika_investointi(investointi, kl, ml2)
 pb3 = takaisinmaksuaika_investointi(investointi, kl, ml3)
-st.markdown("##
+st.markdown("##")
 # Vastiketaulukko (5 v välein)
 rahoitus, _ = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio, korjaus_vali, korjaus_hinta, korjaus_laina_aika)
 _, lampo1 = erittely_listat(investointi, laina_aika, korko, h1, kulutus, inflaatio, korjaus_vali, korjaus_hinta, korjaus_laina_aika)
