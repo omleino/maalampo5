@@ -203,23 +203,3 @@ st.write(f"**Maalämpö C ({h3:.2f} €/kWh):** {f(pb3)}")
 st.markdown(f"**Lainaosuus investoinnille:** {investointi / neliot:,.0f} €/m²")
 
 # PDF
-syotteet = {
-    "Investointi (€)": investointi,
-    "Laina-aika (v)": laina_aika,
-    "Korko (%/v)": korko,
-    "Sähkönkulutus (kWh/v)": kulutus,
-    "Sähkön inflaatio (%/v)": inflaatio,
-    "Korjausväli (v)": korjaus_vali,
-    "Korjauksen hinta (€)": korjaus_hinta,
-    "Korjauslaina (v)": korjaus_laina_aika,
-    "Maalämpö kuukausikustannus (€)": maalampo_kk_kulu,
-    "Sähköhinta A (€/kWh)": h1,
-    "Sähköhinta B (€/kWh)": h2,
-    "Sähköhinta C (€/kWh)": h3,
-    "Kaukolämpö (€)": kl0,
-    "Kaukolämmön inflaatio (%/v)": kl_inf,
-    "Neliöt (m²)": neliot,
-}
-
-pdf = luo_pdf(fig, tbl, pb1, pb2, pb3, lainaosuus, syotteet)
-st.download_button("📄 Lataa PDF-raportti", data=pdf, file_name="lämmitysvertailu.pdf", mime="application/pdf")
